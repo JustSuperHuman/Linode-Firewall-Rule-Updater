@@ -12,3 +12,5 @@ Run the tool!
 
 Hope it helps :D
 
+
+** Check out [DuckDNS](https://www.duckdns.org/) for a great DDNS provider. (Then add your DuckDNS domain to this tool!)

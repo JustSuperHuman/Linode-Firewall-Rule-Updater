@@ -11,11 +11,23 @@ class Program
         string linodePersonalAccessToken = ConfigurationManager.AppSettings["LinodePersonalAccessToken"];
         string[] fullAccessDomains = ConfigurationManager.AppSettings["FullAccessDomains"].Split(',');
 
+        string duckDNSToken = ConfigurationManager.AppSettings["DuckDNSToken"] ?? "";
+        string duckDNSDomains = ConfigurationManager.AppSettings["DuckDNSDomains"] ?? "";
+
         string apiUrl = "https://api.linode.com/v4/networking/firewalls";
 
         // Create an HttpClient instance and set the authorization header
         using (HttpClient client = new HttpClient())
         {
+            //UpdateDuckDNS
+            if (!String.IsNullOrEmpty(duckDNSToken) && !String.IsNullOrEmpty(duckDNSDomains))
+            {
+                Console.WriteLine("Updating DuckDNS with this IP Address...");
+                HttpResponseMessage duckDNSResponse = await client.GetAsync($"https://www.duckdns.org/update?domains={duckDNSDomains}&token={duckDNSToken}&ip=");
+                string duckDNSResponseBody = await duckDNSResponse.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response... {duckDNSResponseBody}");
+            }
+
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", linodePersonalAccessToken);
 
             // Send a GET request to the API endpoint and read the response
@@ -91,7 +103,7 @@ class Program
                     {
                         var updateRulesJson = JsonSerializer.Serialize(rules, options);
                         var content = new StringContent(updateRulesJson, System.Text.Encoding.UTF8, "application/json");
-                        var updateResponse = await client.PutAsync($"https://api.linode.com/v4/networking/firewalls/{firewall.id}/rules", content);
+                        var updateResponse = await client.PutAsync($"{apiUrl}/{firewall.id}/rules", content);
                         var updateResponseBody = await updateResponse.Content.ReadAsStringAsync();
                         PrintUpdateResponse(updateResponseBody, firewall.label);
                     }
@@ -100,8 +112,7 @@ class Program
 
         }
 
-
-        Console.Read();
+        if(args.Contains("-s")) Console.Read();
     }
 
     public static void PrintUpdateResponse(string updateResponse, string firewallName)

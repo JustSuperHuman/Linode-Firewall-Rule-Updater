@@ -42,7 +42,7 @@ class Program
             {
                 string[] domainConfigs = domainConfig.Split("|");
                 string domainName = domainConfigs[0]; // example.com
-                string domainPorts = domainConfigs[1]; // 1-50 or 1,2,3,4,5 or 42
+                string domainPorts = domainConfigs[1]; // 1-50 or 1,2,3,4,5 or 42 or * (All Ports)
                 string firewallMask = domainConfigs[2]; // FirewallNameFilter to apply it to.  If *, it will apply to all firewalls
 
                 string resolvedIPFormatted = $"{GetIP(domainName)}/32";

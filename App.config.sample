@@ -1,0 +1,8 @@
+<configuration>
+  <appSettings>
+    <add key="LinodePersonalAccessToken" value="Linode_APIKEY_HERE" />
+	<add key="FullAccessDomains" value="home.tekprepper.com|*|*,admin.tekprepper.com|*|*,vpn.tekprepper.com|*|*,latublu.duckdns.org|*|*,palmharbor.duckdns.org|83-84|pbx" />
+	<add key="DuckDNSToken" value="DUCKDNS_GUID_HERE"/>
+	<add key="DuckDNSDomains" value="DUCKDNS_DOMAINS_HERE"/>
+  </appSettings>
+</configuration>

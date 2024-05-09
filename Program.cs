@@ -15,6 +15,7 @@ namespace LinodeFirewallRulesUpdater
         private static readonly string[] fullAccessDomains = ConfigurationManager.AppSettings["FullAccessDomains"].Split(',');
         private static readonly string duckDNSToken = ConfigurationManager.AppSettings["DuckDNSToken"] ?? "";
         private static readonly string duckDNSDomains = ConfigurationManager.AppSettings["DuckDNSDomains"] ?? "";
+        private static readonly string LocalSystemID = ConfigurationManager.AppSettings["LocalSystemID"] ?? "";
 
         static async Task Main(string[] args)
         {
@@ -23,7 +24,30 @@ namespace LinodeFirewallRulesUpdater
             // Resolve all IP addresses at the beginning
             var domainConfigs = await GetDomainInfos(fullAccessDomains);
 
-            await UpdateDuckDNS(duckDNSToken, duckDNSDomains);
+
+            // Get public IP address from ipify API
+            Console.WriteLine("Fetching public IP Address...");
+            string publicIP = await client.GetStringAsync("https://api.ipify.org");
+            Console.WriteLine($"Public IP Address: {publicIP}");
+
+            // Add the local system to the domainConfigs (Mainly for the laptop cases)
+            if (!string.IsNullOrEmpty(LocalSystemID))
+            {
+                domainConfigs.Add(new DomainInfo
+                {
+                    DomainName = LocalSystemID,
+                    IP = publicIP,
+                    FirewallMask = "*",
+                    Ports = "*"
+                });
+                Console.WriteLine($"Added local system '{LocalSystemID}' to the domain configs...");
+
+            }
+
+            if (!string.IsNullOrEmpty(duckDNSToken) && !string.IsNullOrEmpty(duckDNSDomains))
+            {
+                await UpdateDuckDNS(duckDNSToken, duckDNSDomains, publicIP);
+            }
 
             // Using the FirewallUpdater class
             var firewallUpdater = new FirewallUpdater(client, linodePersonalAccessToken, domainConfigs);
@@ -36,17 +60,26 @@ namespace LinodeFirewallRulesUpdater
             if (args.Contains("-s")) Console.ReadLine();
         }
 
-  
 
-        private static async Task UpdateDuckDNS(string token, string domains)
+
+        private static async Task UpdateDuckDNS(string token, string domains, string publicIP)
         {
             if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(domains)) return;
 
-            Console.WriteLine("Updating DuckDNS with this IP Address...");
-            var response = await client.GetAsync($"https://www.duckdns.org/update?domains={domains}&token={token}&ip=");
-            var responseBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Response... {responseBody}");
+            try
+            {
+                // Update DuckDNS with the fetched IP address
+                Console.WriteLine("Updating DuckDNS with this IP Address...");
+                var response = await client.GetAsync($"https://www.duckdns.org/update?domains={domains}&token={token}&ip={publicIP}");
+                var responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response from DuckDNS: {responseBody}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error occurred: {ex.Message}");
+            }
         }
+
         public static void PrintUpdateResponse(string updateResponse, string firewallName)
         {
             Console.WriteLine("");
